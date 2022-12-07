@@ -1,0 +1,7 @@
+{
+  "name": "authenticator-bot",
+  "version": "0.1.0",
+  "dependencies": {
+    "discord.js": "^14.7.1"
+  }
+}
