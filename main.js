@@ -1,27 +1,26 @@
-const { RoleSelectMenuBuilder } = require('@discordjs/builders');
-
 require('dotenv').config();
-const { Client,
-    GatewayIntentBits,
-    Partials,
-    Events,
-    EmbedBuilder,
-    BaseChannel,
-    ApplicationCommandType,
-    ApplicationCommandOptionType,
-    ChannelType,
-    ButtonBuilder,
-    ButtonStyle,
-    ActionRowBuilder,
-    SlashCommandBuilder,
-    PresenceUpdateStatus,
-    DMChannel
-} = require("discord.js"),
+const
+    { Client,
+        GatewayIntentBits,
+        Partials,
+        Events,
+        EmbedBuilder,
+        BaseChannel,
+        ApplicationCommandType,
+        ApplicationCommandOptionType,
+        ChannelType,
+        ButtonBuilder,
+        ButtonStyle,
+        ActionRowBuilder,
+        SlashCommandBuilder,
+        PresenceUpdateStatus,
+        DMChannel
+    } = require("discord.js"),
     client = new Client({
         partials: [Partials.Channel, Partials.GuildMember, Partials.GuildScheduledEvent, Partials.Message, Partials.Reaction, Partials.ThreadMember, Partials.User],
         intents: [GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildBans, GatewayIntentBits.GuildEmojisAndStickers, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildInvites, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildScheduledEvents, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildWebhooks, GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent]
-    });
-
+    }),
+    json = {};
 client.on(Events.ClientReady, () => {
     console.info("準備ok");
     client.guilds.cache.map(guild => {
@@ -38,12 +37,7 @@ client.on(Events.ClientReady, () => {
         ]);
     });
 });
-
-const json = {};
-
-client.on(Events.MessageCreate, message => {
-});
-
+client.on(Events.MessageCreate, message => { });
 client.on(Events.InteractionCreate, interaction => {
     switch (interaction.commandName) {
         case "authbtncreate": {
@@ -59,9 +53,7 @@ client.on(Events.InteractionCreate, interaction => {
                 .setDescription("✅認証は下のボタンを押下する必要があります。")
                 .setAuthor(interaction.guild);
             interaction.channel.send({ embeds: [embed], components: [components] })
-                .then(() => {
-                    interaction.reply({ content: "作成が完了しました！", ephemeral: true });
-                });
+                .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); });
             break;
         }
     };
