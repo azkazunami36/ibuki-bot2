@@ -22,7 +22,7 @@ client.on("ready", () => {
     console.log("準備ok");
     client.application.commands.set([
         new SlashCommandBuilder()
-            .setName("Authenticator")
+            .setName("authbtncreate")
             .setDescription("認証ボタンを作成します。")
     ]);
 });
@@ -32,7 +32,7 @@ client.on("messageCreate", message => {
 
 client.on("interactionCreate", interaction => {
     switch (interaction.commandName) {
-        case "AuthenticatorButtonCreate": {
+        case "authbtncreate": {
                 const button = new ButtonBuilder()
                     .setLabel("認証！")
                     .setStyle(ButtonStyle.Primary)
