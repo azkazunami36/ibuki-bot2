@@ -1,28 +1,35 @@
 require('dotenv').config();
-const
-    { Client,
-        GatewayIntentBits,
-        Partials,
-        Events,
-        EmbedBuilder,
-        BaseChannel,
-        ApplicationCommandType,
-        ApplicationCommandOptionType,
-        ChannelType,
-        ButtonBuilder,
-        ButtonStyle,
-        ActionRowBuilder,
-        SlashCommandBuilder,
-        PresenceUpdateStatus,
-        DMChannel
-    } = require("discord.js"),
+const {
+    Client,
+    GatewayIntentBits,
+    Partials,
+    Events,
+    EmbedBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ActionRowBuilder,
+    SlashCommandBuilder
+} = require("discord.js"),
     client = new Client({
-        partials: [Partials.Channel, Partials.GuildMember, Partials.GuildScheduledEvent, Partials.Message, Partials.Reaction, Partials.ThreadMember, Partials.User],
-        intents: [GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages, GatewayIntentBits.GuildBans, GatewayIntentBits.GuildEmojisAndStickers, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildInvites, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildScheduledEvents, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildWebhooks, GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent]
+        partials: [
+            Partials.GuildMember,
+            Partials.Message,
+            Partials.User
+        ],
+        intents: [
+            GatewayIntentBits.DirectMessages,
+            GatewayIntentBits.GuildIntegrations,
+            GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.MessageContent
+        ]
     }),
     json = {};
 client.on(Events.ClientReady, () => {
-    console.info("準備ok");
+    console.info(
+        "準備完了！\n" +
+        "エラーが発生した際には、エラー文をDiscordにて「あんこかずなみ36#5008」にお送りください！\n" +
+        "もちろん、リポジトリ名もお忘れずに。"
+    );
     client.guilds.cache.map(guild => {
         client.guilds.cache.get(guild.id).commands.set([]);
         client.application.commands.set([
@@ -37,7 +44,6 @@ client.on(Events.ClientReady, () => {
         ]);
     });
 });
-client.on(Events.MessageCreate, message => { });
 client.on(Events.InteractionCreate, interaction => {
     console.log("インタラクション受信");
     switch (interaction.commandName) {
@@ -55,6 +61,7 @@ client.on(Events.InteractionCreate, interaction => {
                 .setAuthor(interaction.guild);
             interaction.channel.send({ embeds: [embed], components: [components] })
                 .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); });
+            console.log("認証ボタン作成");
             break;
         }
     };
@@ -69,15 +76,15 @@ client.on(Events.InteractionCreate, interaction => {
                 ord: []
             };
             let data = json[interaction.user.id];
-            data.calc_type = Math.floor(Math.random() * 2);
             data.one = Math.floor(Math.random() * 9);
             data.two = Math.floor(Math.random() * 9);
             data.ord.push({ type: "+", Num: data.one + data.two });
             data.ord.push({ type: "-", Num: data.one - data.two });
             data.ord.push({ type: "*", Num: data.one * data.two });
+            data.calc_type = Math.floor(Math.random() * (data.ord.length - 1));
             for (let i = (data.ord.length - 1); i != 0; i--) {
                 const random = Math.floor(Math.random() * i);
-                var tmp = data.ord[i];
+                let tmp = data.ord[i];
                 data.ord[i] = data.ord[random];
                 data.ord[random] = tmp;
             };
@@ -108,38 +115,41 @@ client.on(Events.InteractionCreate, interaction => {
                 const awnser = json[interaction.user.id].calc_type;
                 if (request == awnser) {
                     const role = interaction.guild.roles.cache.get(roleID);
-                    interaction.guild.members.cache.get(interaction.user.id).roles.add(role).then(member => {
-                        interaction.reply({
-                            content: "認証に成功しました！",
-                            ephemeral: true
+                    interaction.guild.members.cache.get(interaction.user.id).roles.add(role)
+                        .then(member => {
+                            interaction.reply({
+                                content: "認証に成功しました！",
+                                ephemeral: true
+                            });
+                        }).catch(e => {
+                            if (e.code) {
+                                let error = "";
+                                switch (e.code) {
+                                    case 50013: error = "権限が不足しています。"; break;
+                                    default: console.log(e); break;
+                                };
+                                if (e.message) error += "/" + e.message;
+                                interaction.reply({
+                                    content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                    ephemeral: true
+                                });
+                                console.log("エラー確認: " + error + "\nこのエラーはかずなみに送る必要性はなさそうです。");
+                            } else {
+                                console.log(e);
+                                interaction.reply({
+                                    content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                    ephemeral: true
+                                });
+                            };
                         });
-                    }).catch(e => {
-                        console.log(e);
-                        if (e.code) {
-                            let error = "";
-                            switch (e.code) {
-                                case 50013: error = "権限が不足しています。"; break;
-                            }
-                            if (e.message) error += "/" + e.message
-                            interaction.reply({
-                                content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
-                                ephemeral: true
-                            });
-                        } else {
-                            interaction.reply({
-                                content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
-                                ephemeral: true
-                            });
-                        }
-                    })
                 } else {
                     interaction.reply({
                         content: "あぁ...答えが違いますよ...\nもっかいクリックしてやりなおしましょ！",
                         ephemeral: true
                     });
                 };
-            }
+            };
         };
-    }
+    };
 });
 client.login(process.env.token);
