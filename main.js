@@ -8,7 +8,8 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ActionRowBuilder,
-    SlashCommandBuilder
+    SlashCommandBuilder,
+    PermissionFlagsBits
 } = require("discord.js"),
     client = new Client({
         partials: [
@@ -48,20 +49,23 @@ client.on(Events.InteractionCreate, interaction => {
     console.log("インタラクション受信");
     switch (interaction.commandName) {
         case "authbtncreate": {
-            const roleID = interaction.options.getRole("roles").id;
-            const button = new ButtonBuilder()
-                .setLabel("認証！")
-                .setStyle(ButtonStyle.Primary)
-                .setCustomId("authenticatorbutton" + roleID);
-            const components = new ActionRowBuilder()
-                .addComponents(button);
-            const embed = new EmbedBuilder()
-                .setTitle("認証をして僕たちとこのサーバーを楽しもう！")
-                .setDescription("✅認証は下のボタンを押下する必要があります。")
-                .setAuthor(interaction.guild);
-            interaction.channel.send({ embeds: [embed], components: [components] })
-                .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); });
-            console.log("認証ボタン作成");
+            const member = interaction.guild.members.cache.get(interaction.user.id);
+            if (member.permissions.has(PermissionFlagsBits.Administrator)) {
+                const roleID = interaction.options.getRole("roles").id;
+                const button = new ButtonBuilder()
+                    .setLabel("認証！")
+                    .setStyle(ButtonStyle.Primary)
+                    .setCustomId("authenticatorbutton" + roleID);
+                const components = new ActionRowBuilder()
+                    .addComponents(button);
+                const embed = new EmbedBuilder()
+                    .setTitle("認証をして僕たちとこのサーバーを楽しもう！")
+                    .setDescription("✅認証は下のボタンを押下する必要があります。")
+                    .setAuthor(interaction.guild);
+                interaction.channel.send({ embeds: [embed], components: [components] })
+                    .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); });
+                console.log("認証ボタン作成");
+            } else interaction.reply({ content: "コマンド発行者自身に管理者権限がないため、実行することが出来ません..." });
             break;
         }
     };
