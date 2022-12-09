@@ -9,7 +9,7 @@ const {
     ButtonStyle,
     ActionRowBuilder,
     SlashCommandBuilder,
-    PermissionFlagsBits
+    PermissionsBitField
 } = require("discord.js"),
     client = new Client({
         partials: [
@@ -32,8 +32,7 @@ client.on(Events.ClientReady, () => {
         "もちろん、リポジトリ名もお忘れずに。"
     );
     client.guilds.cache.map(guild => {
-        client.guilds.cache.get(guild.id).commands.set([]);
-        client.application.commands.set([
+        client.guilds.cache.get(guild.id).commands.set([
             new SlashCommandBuilder()
                 .setName("authbtncreate")
                 .setDescription("認証ボタンを作成します。")
@@ -50,7 +49,7 @@ client.on(Events.InteractionCreate, interaction => {
     switch (interaction.commandName) {
         case "authbtncreate": {
             const member = interaction.guild.members.cache.get(interaction.user.id);
-            if (member.permissions.has(PermissionFlagsBits.Administrator)) {
+            if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
                 const roleID = interaction.options.getRole("roles").id;
                 const button = new ButtonBuilder()
                     .setLabel("認証！")
