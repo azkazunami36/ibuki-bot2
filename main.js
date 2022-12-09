@@ -108,35 +108,30 @@ client.on(Events.InteractionCreate, interaction => {
                 const awnser = json[interaction.user.id].calc_type;
                 if (request == awnser) {
                     const role = interaction.guild.roles.cache.get(roleID);
-                    try {
-                        try {
-                            interaction.guild.members.cache.get(interaction.user.id).roles.add(role).then(member => {
-                                interaction.reply({
-                                    content: "認証に成功しました！",
-                                    ephemeral: true
-                                });
-                            }).catch(e => {
-                                console.log(e);
-                                if (e.code) {
-                                    let error = "";
-                                    switch (e.code) {
-                                        case 50013: error = "権限が不足しています。"; break;
-                                    }
-                                    if (e.message) error += "/" + e.message
-                                    interaction.reply({
-                                        content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
-                                        ephemeral: true
-                                    });
-                                } else {interaction.reply({
-                                    content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
-                                    ephemeral: true
-                                });
-                                }
-                            })
-                        } catch (e) {
+                    interaction.guild.members.cache.get(interaction.user.id).roles.add(role).then(member => {
+                        interaction.reply({
+                            content: "認証に成功しました！",
+                            ephemeral: true
+                        });
+                    }).catch(e => {
+                        console.log(e);
+                        if (e.code) {
+                            let error = "";
+                            switch (e.code) {
+                                case 50013: error = "権限が不足しています。"; break;
+                            }
+                            if (e.message) error += "/" + e.message
+                            interaction.reply({
+                                content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                ephemeral: true
+                            });
+                        } else {
+                            interaction.reply({
+                                content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                ephemeral: true
+                            });
                         }
-                    } catch (error) {
-                    };
+                    })
                 } else {
                     interaction.reply({
                         content: "あぁ...答えが違いますよ...\nもっかいクリックしてやりなおしましょ！",
