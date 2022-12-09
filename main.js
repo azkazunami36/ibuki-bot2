@@ -39,6 +39,7 @@ client.on(Events.ClientReady, () => {
 });
 client.on(Events.MessageCreate, message => { });
 client.on(Events.InteractionCreate, interaction => {
+    console.log("インタラクション受信");
     switch (interaction.commandName) {
         case "authbtncreate": {
             const roleID = interaction.options.getRole("roles").id;
@@ -108,16 +109,33 @@ client.on(Events.InteractionCreate, interaction => {
                 if (request == awnser) {
                     const role = interaction.guild.roles.cache.get(roleID);
                     try {
-                        interaction.member.roles.add(role);
-                        interaction.reply({
-                            content: "認証に成功しました！",
-                            ephemeral: true
-                        })
+                        try {
+                            interaction.guild.members.cache.get(interaction.user.id).roles.add(role).then(member => {
+                                interaction.reply({
+                                    content: "認証に成功しました！",
+                                    ephemeral: true
+                                });
+                            }).catch(e => {
+                                console.log(e);
+                                if (e.code) {
+                                    let error = "";
+                                    switch (e.code) {
+                                        case 50013: error = "権限が不足しています。"; break;
+                                    }
+                                    if (e.message) error += "/" + e.message
+                                    interaction.reply({
+                                        content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                        ephemeral: true
+                                    });
+                                } else {interaction.reply({
+                                    content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                    ephemeral: true
+                                });
+                                }
+                            })
+                        } catch (e) {
+                        }
                     } catch (error) {
-                        interaction.reply({
-                            content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
-                            ephemeral: true
-                        });
                     };
                 } else {
                     interaction.reply({
