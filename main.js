@@ -23,8 +23,7 @@ const {
             GatewayIntentBits.GuildMessages,
             GatewayIntentBits.MessageContent
         ]
-    }),
-    json = {};
+    });
 client.on(Events.ClientReady, () => {
     console.info(
         "準備完了！\n" +
@@ -72,38 +71,32 @@ client.on(Events.InteractionCreate, interaction => {
         if (interaction.customId.match(/authenticatorbutton[0-9]/)) {
             const roleID = interaction.customId.split("authenticatorbutton")[1];
             const embed = new EmbedBuilder();
-            json[interaction.user.id] = {
-                calc_type: 0,
-                one: 0,
-                two: 0,
-                ord: []
-            };
-            let data = json[interaction.user.id];
-            data.one = Math.floor(Math.random() * 9);
-            data.two = Math.floor(Math.random() * 9);
-            data.ord.push({ type: "+", Num: data.one + data.two });
-            data.ord.push({ type: "-", Num: data.one - data.two });
-            data.ord.push({ type: "*", Num: data.one * data.two });
-            data.calc_type = Math.floor(Math.random() * (data.ord.length - 1));
-            for (let i = (data.ord.length - 1); i != 0; i--) {
+            let one = Math.floor(Math.random() * 9), 
+            two = Math.floor(Math.random() * 9), 
+            ord = [];
+            ord.push({ type: "+", Num: one + two });
+            ord.push({ type: "-", Num: one - two });
+            ord.push({ type: "*", Num: one * two });
+            let calc_type = Math.floor(Math.random() * (ord.length - 1));
+            for (let i = (ord.length - 1); i != 0; i--) {
                 const random = Math.floor(Math.random() * i);
-                let tmp = data.ord[i];
-                data.ord[i] = data.ord[random];
-                data.ord[random] = tmp;
+                let tmp = ord[i];
+                ord[i] = ord[random];
+                ord[random] = tmp;
             };
             embed.setTitle("問題！");
             embed.setDescription("下の計算を解くだけで認証が出来ます！");
             embed.addFields({
-                name: data.one + data.ord[data.calc_type].type + data.two + "=",
+                name: one + ord[calc_type].type + two + "=",
                 value: "の答えを下から選びましょう。"
             });
             const components = new ActionRowBuilder();
-            for (let i = 0; data.ord.length != i; i++) {
+            for (let i = 0; ord.length != i; i++) {
                 components.addComponents(
                     new ButtonBuilder()
-                        .setLabel(String(data.ord[i].Num))
+                        .setLabel(String(ord[i].Num))
                         .setStyle(ButtonStyle.Primary)
-                        .setCustomId(roleID + "calc" + i)
+                        .setCustomId(roleID + "calc" + i + "calc" + calc_type)
                 );
             };
             interaction.reply({
@@ -111,21 +104,25 @@ client.on(Events.InteractionCreate, interaction => {
                 components: [components],
                 ephemeral: true
             });
+            console.log("問題作成。データ:" + one + "/" + two + "/" + calc_type, ord);
         } else if (interaction.customId.match(/[0-9]calc[0-9]/)) {
-            const roleID = interaction.customId.split("calc")[0];
+            const roleID = Number(interaction.customId.split("calc")[0]);
             const request = Number(interaction.customId.split("calc")[1]);
+            const calc_type = Number(interaction.customId.split("calc")[2]);
+            console.log("ロール付与。データ:" + roleID + "/" + request + "/" + calc_type);
             if (interaction.customId.match()) {
-                const awnser = json[interaction.user.id].calc_type;
+                const awnser = calc_type;
                 if (request == awnser) {
                     const role = interaction.guild.roles.cache.get(roleID);
-                    interaction.guild.members.cache.get(interaction.user.id).roles.add(role)
+                    const member = interaction.guild.members.cache.get(interaction.user.id);
+                    member.roles.add(role)
                         .then(member => {
                             interaction.reply({
                                 content: "認証に成功しました！",
                                 ephemeral: true
                             });
                         }).catch(e => {
-                            if (e.code) {
+                            if (e.code && e.code != "InvalidType") {
                                 let error = "";
                                 switch (e.code) {
                                     case 50013: error = "権限が不足しています。"; break;
@@ -136,7 +133,7 @@ client.on(Events.InteractionCreate, interaction => {
                                     content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
                                     ephemeral: true
                                 });
-                                console.log("エラー確認: " + error + "\nこのエラーはかずなみに送る必要性はなさそうです。");
+                                if (error) console.log("エラー確認: " + error + "\nこのエラーはかずなみに送る必要性はなさそうです。");
                             } else {
                                 console.log(e);
                                 interaction.reply({
