@@ -13,7 +13,7 @@ const {
 } = require("discord.js"),
     client = new Client({
         partials: [],
-        intents: [GatewayIntentBits.GuildMessages]
+        intents: [GatewayIntentBits.Guilds]
     });
 client.on(Events.ClientReady, () => {
     console.info(
@@ -107,7 +107,6 @@ client.on(Events.InteractionCreate, interaction => {
                 if (request == awnser) {
                     interaction.guild.roles.fetch(roleID).then(role => {
                         const member = interaction.guild.members.cache.get(interaction.user.id);
-                        console.log(role)
                         member.roles.add(role)
                             .then(member => {
                                 interaction.reply({
