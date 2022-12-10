@@ -12,17 +12,8 @@ const {
     PermissionsBitField
 } = require("discord.js"),
     client = new Client({
-        partials: [
-            Partials.GuildMember,
-            Partials.Message,
-            Partials.User
-        ],
-        intents: [
-            GatewayIntentBits.DirectMessages,
-            GatewayIntentBits.GuildIntegrations,
-            GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent
-        ]
+        partials: [],
+        intents: [GatewayIntentBits.GuildMessages]
     });
 client.on(Events.ClientReady, () => {
     console.info(
@@ -71,9 +62,9 @@ client.on(Events.InteractionCreate, interaction => {
         if (interaction.customId.match(/authenticatorbutton[0-9]/)) {
             const roleID = interaction.customId.split("authenticatorbutton")[1];
             const embed = new EmbedBuilder();
-            let one = Math.floor(Math.random() * 9), 
-            two = Math.floor(Math.random() * 9), 
-            ord = [];
+            let one = Math.floor(Math.random() * 9),
+                two = Math.floor(Math.random() * 9),
+                ord = [];
             ord.push({ type: "+", Num: one + two });
             ord.push({ type: "-", Num: one - two });
             ord.push({ type: "*", Num: one * two });
@@ -106,42 +97,46 @@ client.on(Events.InteractionCreate, interaction => {
             });
             console.log("問題作成。データ:" + one + "/" + two + "/" + calc_type, ord);
         } else if (interaction.customId.match(/[0-9]calc[0-9]/)) {
-            const roleID = Number(interaction.customId.split("calc")[0]);
-            const request = Number(interaction.customId.split("calc")[1]);
-            const calc_type = Number(interaction.customId.split("calc")[2]);
+            const splited = interaction.customId.split("calc");
+            const roleID = splited[0];
+            const request = Number(splited[1]);
+            const calc_type = Number(splited[2]);
             console.log("ロール付与。データ:" + roleID + "/" + request + "/" + calc_type);
             if (interaction.customId.match()) {
                 const awnser = calc_type;
                 if (request == awnser) {
-                    const role = interaction.guild.roles.cache.get(roleID);
-                    const member = interaction.guild.members.cache.get(interaction.user.id);
-                    member.roles.add(role)
-                        .then(member => {
-                            interaction.reply({
-                                content: "認証に成功しました！",
-                                ephemeral: true
-                            });
-                        }).catch(e => {
-                            if (e.code && e.code != "InvalidType") {
-                                let error = "";
-                                switch (e.code) {
-                                    case 50013: error = "権限が不足しています。"; break;
-                                    default: console.log(e); break;
+                    interaction.guild.roles.fetch(roleID).then(role => {
+                        const member = interaction.guild.members.cache.get(interaction.user.id);
+                        console.log(role)
+                        member.roles.add(role)
+                            .then(member => {
+                                interaction.reply({
+                                    content: "認証に成功しました！",
+                                    ephemeral: true
+                                });
+                            }).catch(e => {
+                                if (e.code) {
+                                    let error = "";
+                                    switch (e.code) {
+                                        case 50013: error = "権限が不足しています。"; break;
+                                        default: console.log(e); break;
+                                    };
+                                    let error2 = "";
+                                    if (e.message) error2 += "/" + e.message;
+                                    interaction.reply({
+                                        content: e.code + ": " + error + error2 + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                        ephemeral: true
+                                    });
+                                    if (error) console.log("エラー確認: " + error + error2 + "\nこのエラーはかずなみに送る必要性はなさそうです。");
+                                } else {
+                                    console.log(e);
+                                    interaction.reply({
+                                        content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                        ephemeral: true
+                                    });
                                 };
-                                if (e.message) error += "/" + e.message;
-                                interaction.reply({
-                                    content: e.code + ": " + error + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
-                                    ephemeral: true
-                                });
-                                if (error) console.log("エラー確認: " + error + "\nこのエラーはかずなみに送る必要性はなさそうです。");
-                            } else {
-                                console.log(e);
-                                interaction.reply({
-                                    content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
-                                    ephemeral: true
-                                });
-                            };
-                        });
+                            });
+                    });
                 } else {
                     interaction.reply({
                         content: "あぁ...答えが違いますよ...\nもっかいクリックしてやりなおしましょ！",
