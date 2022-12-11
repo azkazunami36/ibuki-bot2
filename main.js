@@ -35,18 +35,21 @@ client.on(Events.ClientReady, () => {
     });
 });
 client.on(Events.InteractionCreate, interaction => {
-    console.log("インタラクション受信");
+    console.log("インタラクション受信: " + interaction.user.username + "さん");
     switch (interaction.commandName) {
         case "authbtncreate": {
             const member = interaction.guild.members.cache.get(interaction.user.id);
             if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
                 const roleID = interaction.options.getRole("roles").id;
-                const button = new ButtonBuilder()
-                    .setLabel("認証！")
-                    .setStyle(ButtonStyle.Primary)
-                    .setCustomId("authenticatorbutton" + roleID);
+                const customId = "authenticatorbutton" + roleID;
+                console.log("ボタンに埋め込まれたデータ: " + customId);
                 const components = new ActionRowBuilder()
-                    .addComponents(button);
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setLabel("認証！")
+                            .setStyle(ButtonStyle.Primary)
+                            .setCustomId(customId)
+                    );
                 const embed = new EmbedBuilder()
                     .setTitle("認証をして僕たちとこのサーバーを楽しもう！")
                     .setDescription("✅認証は下のボタンを押下する必要があります。")
@@ -83,11 +86,13 @@ client.on(Events.InteractionCreate, interaction => {
             });
             const components = new ActionRowBuilder();
             for (let i = 0; ord.length != i; i++) {
+                const customId = roleID + "calc" + i + "calc" + calc_type;
+                console.log("ボタンに埋め込まれたデータ: " + customId);
                 components.addComponents(
                     new ButtonBuilder()
                         .setLabel(String(ord[i].Num))
                         .setStyle(ButtonStyle.Primary)
-                        .setCustomId(roleID + "calc" + i + "calc" + calc_type)
+                        .setCustomId(customId)
                 );
             };
             interaction.reply({
