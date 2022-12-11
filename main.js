@@ -25,7 +25,7 @@ client.on(Events.ClientReady, () => {
     client.guilds.cache.map(guild => {
         client.guilds.cache.get(guild.id).commands.set([
             new SlashCommandBuilder()
-                .setName("authbtncreate")
+                .setName("buttoncreate")
                 .setDescription("認証ボタンを作成します。")
                 .addRoleOption(option => option
                     .setName("roles")
@@ -50,7 +50,7 @@ client.on(Events.ClientReady, () => {
 client.on(Events.InteractionCreate, interaction => {
     console.log("インタラクション受信: " + interaction.user.username + "さん");
     switch (interaction.commandName) {
-        case "authbtncreate": {
+        case "buttoncreate": {
             const member = interaction.guild.members.cache.get(interaction.user.id);
             if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
                 const roleID = interaction.options.getRole("roles").id;
@@ -70,9 +70,18 @@ client.on(Events.InteractionCreate, interaction => {
                 const embed = new EmbedBuilder()
                     .setTitle(title || "認証をして僕たちとこのサーバーを楽しもう！")
                     .setDescription(description || "✅認証は下のボタンを押下する必要があります。")
-                    .setAuthor(interaction.guild);
+                    .setAuthor({
+                        name: interaction.guild.name,
+                        iconURL: interaction.guild.iconURL()
+                    });
                 interaction.channel.send({ embeds: [embed], components: [components] })
-                    .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); });
+                    .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); })
+                    .catch(e => {
+                        interaction.reply({
+                            content: "エラーが確認されました。: `" + e.code + discordError(e.code) + "/" + e.message,
+                            ephemeral: true
+                        });
+                    });
                 console.log("認証ボタン作成");
             } else interaction.reply({ content: "コマンド発行者自身に管理者権限がないため、実行することが出来ません..." });
             break;
@@ -160,15 +169,11 @@ const giveaRole = (interaction, roleID) => {
                 });
             }).catch(e => {
                 if (e.code) {
-                    let error = "";
-                    switch (e.code) {
-                        case 50013: error = "権限が不足しています。"; break;
-                        default: console.log(e); break;
-                    };
+                    let error = discordError(e.code);
                     let error2 = "";
-                    if (e.message) error2 += "/" + e.message;
+                    if (e.message) error2 = e.message;
                     interaction.reply({
-                        content: e.code + ": " + error + error2 + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                        content: e.code + ": " + error + "/" + error2 + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
                         ephemeral: true
                     });
                     if (error) console.log("エラー確認: " + error + error2 + "\nこのエラーはかずなみに送る必要性はなさそうです。");
@@ -181,5 +186,13 @@ const giveaRole = (interaction, roleID) => {
                 };
             });
     });
+};
+const discordError = code => {
+    const list = {
+        50013: "権限が不足しています。"
+    };
+    let errMessage = list[code];
+    if (!errMessage) errMessage = "想定外のエラーです...";
+    return errMessage;
 };
 client.login(process.env.token);
