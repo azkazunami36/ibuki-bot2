@@ -10,7 +10,8 @@ const {
     ActionRowBuilder,
     SlashCommandBuilder,
     PermissionsBitField,
-    Interaction
+    Interaction,
+    Role
 } = require("discord.js"),
     client = new Client({
         partials: [],
@@ -43,50 +44,116 @@ client.on(Events.ClientReady, () => {
                 .addStringOption(option => option
                     .setName("description")
                     .setDescription("埋め込みの説明を決めます。")
+                ),
+            new SlashCommandBuilder()
+                .setName("multirolebtn")
+                .setDescription("複数役職を付与したい場合に使用します。")
+                .addStringOption(option => option
+                    .setName("roleids")
+                    .setDescription("ロールIDをスペースで区切り、それを使用し複数ロールの付与をします。")
+                    .setRequired(true)
+                )
+                .addStringOption(option => option
+                    .setName("title")
+                    .setDescription("埋め込みのタイトルを決めます。")
+                )
+                .addStringOption(option => option
+                    .setName("description")
+                    .setDescription("埋め込みの説明を決めます。")
                 )
         ]);
     });
 });
 client.on(Events.InteractionCreate, interaction => {
     console.log("インタラクション受信: " + interaction.user.username + "さん");
-    switch (interaction.commandName) {
-        case "buttoncreate": {
-            const member = interaction.guild.members.cache.get(interaction.user.id);
-            if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-                const roleID = interaction.options.getRole("roles").id;
-                const question = interaction.options.getBoolean("question");
-                const title = interaction.options.getString("title");
-                const description = interaction.options.getString("description");
-                const point = "authenticatorbutton";
-                const customId = point + roleID + point + String(question);
-                console.log("ボタンに埋め込まれたデータ: " + customId);
-                const components = new ActionRowBuilder()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setLabel("認証！")
-                            .setStyle(ButtonStyle.Primary)
-                            .setCustomId(customId)
-                    );
-                const embed = new EmbedBuilder()
-                    .setTitle(title || "認証をして僕たちとこのサーバーを楽しもう！")
-                    .setDescription(description || "✅認証は下のボタンを押下する必要があります。")
-                    .setAuthor({
-                        name: interaction.guild.name,
-                        iconURL: interaction.guild.iconURL()
-                    });
-                interaction.channel.send({ embeds: [embed], components: [components] })
-                    .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); })
-                    .catch(e => {
-                        interaction.reply({
-                            content: "エラーが確認されました。: `" + e.code + discordError(e.code) + "/" + e.message,
-                            ephemeral: true
-                        });
-                    });
-                console.log("認証ボタン作成");
-            } else interaction.reply({ content: "コマンド発行者自身に管理者権限がないため、実行することが出来ません..." });
-            break;
+    if (interaction.isChatInputCommand()) {
+        if (interaction.channel.isTextBased() && !interaction.channel.isVoiceBased() && !interaction.channel.isThread() && !interaction.channel.isDMBased()) {
+            switch (interaction.commandName) {
+                case "buttoncreate": {
+                    const member = interaction.guild.members.cache.get(interaction.user.id);
+                    if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+                        const roleID = interaction.options.getRole("roles").id;
+                        const question = interaction.options.getBoolean("question");
+                        const title = interaction.options.getString("title");
+                        const description = interaction.options.getString("description");
+                        const point = "authenticatorbutton";
+                        const customId = point + roleID + point + String(question);
+                        console.log("ボタンに埋め込まれたデータ: " + customId);
+                        const components = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setLabel("認証！")
+                                    .setStyle(ButtonStyle.Primary)
+                                    .setCustomId(customId)
+                            );
+                        const embed = new EmbedBuilder()
+                            .setTitle(title || "認証をして僕たちとこのサーバーを楽しもう！")
+                            .setDescription(description || "✅認証は下のボタンを押下する必要があります。")
+                            .setAuthor({
+                                name: interaction.guild.name,
+                                iconURL: interaction.guild.iconURL()
+                            });
+                        interaction.channel.send({ embeds: [embed], components: [components] })
+                            .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); })
+                            .catch(e => {
+                                interaction.reply({
+                                    content: "エラーが確認されました。: `" + e.code + discordError(e.code) + "/" + e.message,
+                                    ephemeral: true
+                                });
+                            });
+                        console.log("認証ボタン作成");
+                    } else interaction.reply({ content: "コマンド発行者自身に管理者権限がないため、実行することが出来ません..." });
+                    break;
+                }
+                case "multirolebtn": {
+                    if (member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+                        const roleIDs = interaction.options.getString("roleids").split(" ");
+                        const title = interaction.options.getString("title");
+                        const description = interaction.options.getString("description");
+                        const roles = (() => {
+                            const roles = [];
+                            if (!roles) return roles;
+                            for (let i = 0; i !== roleIDs.length; i++) {
+                                const role = interaction.guild.roles.cache.get(roleIDs[i]);
+                                if (role) roles.push(role);
+                            }
+                            return roles;
+                        })();
+                        if (roles.length === 0) {
+                            interaction.reply("有効なロールIDがありません。もう一度指定してください。");
+                            break;
+                        }
+                        const components = new ActionRowBuilder();
+                        let roleNameStr = description || "既にロールが付いた状態でもう一度押すと、ロールを外すことが出来ます。";
+                        for (let i = 0; i !== roles.length; i++) {
+                            components.addComponents(
+                                new ButtonBuilder()
+                                    .setLabel(String(1))
+                                    .setStyle(ButtonStyle.Primary)
+                                    .setCustomId("multirole" + roles[i].id)
+                            );
+                            roleNameStr += "\n[" + (i + 1) + "] " + roles[i].name
+                        }
+                        const embed = new EmbedBuilder()
+                            .setTitle(title || "下の一覧から数字を選んで、自由なロールを付けよう！")
+                            .setDescription(roleNameStr)
+                            .setAuthor({
+                                name: interaction.guild.name,
+                                iconURL: interaction.guild.iconURL()
+                            })
+                        interaction.channel.send({ embeds: [embed], components: [components] })
+                            .then(() => { interaction.reply({ content: "作成が完了しました！", ephemeral: true }); })
+                            .catch(e => {
+                                interaction.reply({
+                                    content: "エラーが確認されました。: `" + e.code + discordError(e.code) + "/" + e.message,
+                                    ephemeral: true
+                                });
+                            });
+                    } else interaction.reply({ content: "コマンド発行者自身に管理者権限がないため、実行することが出来ません..." });
+                }
+            }
         }
-    };
+    }
     if (interaction.isButton()) {
         if (interaction.customId.match(/authenticatorbutton[0-9]/)) {
             const customIdSplit = interaction.customId.split("authenticatorbutton");
@@ -107,7 +174,7 @@ client.on(Events.InteractionCreate, interaction => {
                     let tmp = ord[i];
                     ord[i] = ord[random];
                     ord[random] = tmp;
-                };
+                }
                 embed.setTitle("問題！");
                 embed.setDescription("下の計算を解くだけで認証が出来ます！");
                 embed.addFields({
@@ -125,7 +192,7 @@ client.on(Events.InteractionCreate, interaction => {
                             .setStyle(ButtonStyle.Primary)
                             .setCustomId(customId)
                     );
-                };
+                }
                 interaction.reply({
                     embeds: [embed],
                     components: [components],
@@ -147,9 +214,64 @@ client.on(Events.InteractionCreate, interaction => {
                         content: "あぁ...答えが違いますよ...\nもっかいクリックしてやりなおしましょ！",
                         ephemeral: true
                     });
-                };
-            };
-        };
+                }
+            }
+        } else if (interaction.customId.match(/multirole[0-9]/)) {
+            const roleID = interaction.customId.split("multirole")[1];
+            const role = interaction.guild.roles.cache.get(roleID);
+            const member = interaction.guild.members.cache.get(interaction.user.id);
+            if (member.roles.cache.has(roleID)) {
+                member.roles.remove(role)
+                    .then(member => {
+                        interaction.reply({
+                            content: "ロールをはく奪してやりました！",
+                            ephemeral: true
+                        });
+                    }).catch(e => {
+                        if (e.code) {
+                            let error = discordError(e.code);
+                            let error2 = "";
+                            if (e.message) error2 = e.message;
+                            interaction.reply({
+                                content: e.code + ": " + error + "/" + error2 + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                ephemeral: true
+                            });
+                            if (error) console.log("エラー確認: " + error + error2 + "\nこのエラーはかずなみに送る必要性はなさそうです。");
+                        } else {
+                            console.log(e);
+                            interaction.reply({
+                                content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                ephemeral: true
+                            });
+                        };
+                    });
+            } else {
+                member.roles.add(role)
+                    .then(member => {
+                        interaction.reply({
+                            content: "ロールを付与しました！",
+                            ephemeral: true
+                        });
+                    }).catch(e => {
+                        if (e.code) {
+                            let error = discordError(e.code);
+                            let error2 = "";
+                            if (e.message) error2 = e.message;
+                            interaction.reply({
+                                content: e.code + ": " + error + "/" + error2 + "\nこのエラーを管理人に報告してくれると、一時的に対処が行われます。",
+                                ephemeral: true
+                            });
+                            if (error) console.log("エラー確認: " + error + error2 + "\nこのエラーはかずなみに送る必要性はなさそうです。");
+                        } else {
+                            console.log(e);
+                            interaction.reply({
+                                content: "認証でエラーが発生してしまいました...\nエラーは管理者が確認し修正します。",
+                                ephemeral: true
+                            });
+                        };
+                    });
+            }
+        }
     };
 });
 /**
