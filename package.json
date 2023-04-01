@@ -2,7 +2,7 @@
   "name": "authenticator-bot",
   "version": "1.1.0",
   "dependencies": {
-    "discord.js": "^14.7.1",
+    "discord.js": "^14.8.0",
     "dotenv": "^16.0.3"
   }
 }
